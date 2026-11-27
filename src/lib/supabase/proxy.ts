@@ -18,6 +18,7 @@ function isPublicPath(pathname: string): boolean {
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+  let noCacheHeaders: Record<string, string> = {};
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,12 +28,15 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );
+          // Cache-Control etc. keep a CDN from serving one user's session cookie to another.
+          noCacheHeaders = headers;
+          Object.entries(headers).forEach(([key, value]) => supabaseResponse.headers.set(key, value));
         },
       },
     },
@@ -50,6 +54,7 @@ export async function updateSession(request: NextRequest) {
     url.search = q ? `?${q}` : "";
     const response = NextResponse.redirect(url);
     supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+    Object.entries(noCacheHeaders).forEach(([key, value]) => response.headers.set(key, value));
     return response;
   };
 
