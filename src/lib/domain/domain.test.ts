@@ -187,5 +187,8 @@ describe("access rules", () => {
     expect(safeRedirectPath("//evil.com")).toBe("/dashboard");
     expect(safeRedirectPath("https://evil.com")).toBe("/dashboard");
     expect(safeRedirectPath(null)).toBe("/dashboard");
+    expect(safeRedirectPath("/\t/evil.com")).toBe("/dashboard");
+    expect(safeRedirectPath("/\n/evil.com")).toBe("/dashboard");
+    expect(safeRedirectPath("/a\\b")).toBe("/dashboard");
   });
 });

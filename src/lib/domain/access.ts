@@ -57,7 +57,8 @@ export function navItemsFor(role: UserRole): NavItem[] {
 
 /** Only same-site relative paths are accepted as post-login destinations. */
 export function safeRedirectPath(value: string | null | undefined, fallback = "/dashboard"): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) {
+  // URL parsers drop tabs and newlines and treat "\" as "/", so "/\t/evil.com" would become "//evil.com".
+  if (!value || !value.startsWith("/") || value.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(value)) {
     return fallback;
   }
   return value;
