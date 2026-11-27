@@ -22,12 +22,17 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const userId = data?.claims?.sub;
   if (error || !userId) return null;
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, email, full_name, role, is_active")
     .eq("id", userId)
     .maybeSingle();
 
+  // A failed query is an outage, not a missing profile: do not sign the user out.
+  if (profileError) {
+    console.error("Could not read the user profile", profileError);
+    throw new Error("Your profile could not be loaded. Try again.");
+  }
   if (!profile || !profile.is_active) return null;
   return {
     id: profile.id,
